@@ -117,6 +117,15 @@ tr.zero td { color: var(--muted); opacity: .55; font-weight: 400; }
 .confirm .sums div { font-size: 18px; }
 .confirm .total .yen { font-size: 60px; }
 .confirm .total .label { font-size: 22px; }
+/* コースセットの量のご案内 */
+.notice {
+  border: 2px solid var(--accent); border-radius: 4px; background: var(--paper);
+  padding: 18px 22px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px 18px; text-align: center;
+}
+.notice .tag { background: var(--accent); color: var(--accent-ink); font-weight: 700; font-size: 15px; letter-spacing: .2em; padding: 4px 12px 4px 14px; border-radius: 3px; flex: none; }
+.notice p { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 24px; line-height: 1.5; text-wrap: balance; min-width: 0; }
+.notice strong { color: var(--accent); font-size: 1.25em; }
+.confirm .notice { max-width: 720px; width: 100%; margin-inline: auto; }
 </style>
 
 </head>
@@ -156,6 +165,11 @@ tr.zero td { color: var(--muted); opacity: .55; font-weight: 400; }
       <p class="note">※単品のご注文は含みません。</p>
     </section>
   </div>
+
+  <aside class="notice" aria-label="コースセットの量について">
+    <span class="tag">ご案内</span>
+    <p>コースセットは、1セットで<strong>大人2名様分</strong>のお食事量です。</p>
+  </aside>
 </div>
 
 <script>
@@ -164,9 +178,9 @@ tr.zero td { color: var(--muted); opacity: .55; font-weight: 400; }
 const ITEMS = [
   { id: "adult", input: "大人",       unitLabel: "人数",   slip: "チャージ料金（大人）",     net: 1000,  gross: 1100 },
   { id: "child", input: "こども",     unitLabel: "人数",   slip: "チャージ料金（こども）",   net: 500,   gross: 550 },
-  { id: "matsu", input: "松コース",   unitLabel: "注文数", slip: "松コースセット（2名分）", net: 7000,  gross: 7700,  gap: true },
-  { id: "take",  input: "竹コース",   unitLabel: "注文数", slip: "竹コースセット（2名分）", net: 10000, gross: 11000 },
-  { id: "ume",   input: "梅コース",   unitLabel: "注文数", slip: "梅コースセット（2名分）", net: 15000, gross: 16500 },
+  { id: "matsu", input: "松コース",   unitLabel: "注文数", slip: "松コースセット", net: 7000,  gross: 7700,  gap: true },
+  { id: "take",  input: "竹コース",   unitLabel: "注文数", slip: "竹コースセット", net: 10000, gross: 11000 },
+  { id: "ume",   input: "梅コース",   unitLabel: "注文数", slip: "梅コースセット", net: 15000, gross: 16500 },
 ];
 const MAX = 99;
 const yen = n => n.toLocaleString("ja-JP");

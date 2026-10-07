@@ -72,6 +72,8 @@ h2 { font-size: 15px; font-weight: 700; color: var(--muted); margin: 0 0 10px; l
 .field.gap { margin-top: 18px; }
 .fname { font-weight: 700; font-size: 19px; }
 .fprice { display: block; color: var(--muted); font-size: 14px; font-weight: 400; font-variant-numeric: tabular-nums; }
+.fsub { display: block; font-size: 15px; font-weight: 500; }
+.ssub { display: block; font-size: .8em; color: var(--muted); }
 .stepper { display: flex; align-items: center; gap: 6px; flex: none; }
 .stepper button {
   width: 56px; height: 56px; border-radius: 50%;
@@ -178,9 +180,9 @@ tr.zero td { color: var(--muted); opacity: .55; font-weight: 400; }
 const ITEMS = [
   { id: "adult", input: "大人",       unitLabel: "人数",   slip: "チャージ料金（大人）",     net: 1000,  gross: 1100 },
   { id: "child", input: "こども",     unitLabel: "人数",   slip: "チャージ料金（こども）",   net: 500,   gross: 550 },
-  { id: "matsu", input: "松コース",   unitLabel: "注文数", slip: "松コースセット", net: 7000,  gross: 7700,  gap: true },
-  { id: "take",  input: "竹コース",   unitLabel: "注文数", slip: "竹コースセット", net: 10000, gross: 11000 },
-  { id: "ume",   input: "梅コース",   unitLabel: "注文数", slip: "梅コースセット", net: 15000, gross: 16500 },
+  { id: "matsu", input: "とよはし満喫コース", sub: "〜骨付き鶏もも＆骨付き豚ロース〜",   unitLabel: "注文数", slip: "とよはし満喫コース", net: 7000,  gross: 7700,  gap: true },
+  { id: "take",  input: "とよはし贅沢コース", sub: "〜牛リブロース＆骨付き豚ロース〜",   unitLabel: "注文数", slip: "とよはし贅沢コース", net: 10000, gross: 11000 },
+  { id: "ume",   input: "とよはし極みコース", sub: "〜牛サーロイン＆牛リブロース〜",   unitLabel: "注文数", slip: "とよはし極みコース", net: 15000, gross: 16500 },
 ];
 const MAX = 99;
 const yen = n => n.toLocaleString("ja-JP");
@@ -199,7 +201,7 @@ function start(saved) {
 
   $("inputs").innerHTML = ITEMS.map(it => `
     <div class="field${it.gap ? " gap" : ""}">
-      <span class="fname">${it.input}<span class="fprice">${it.unitLabel}・税込 ${yen(it.gross)}円</span></span>
+      <span class="fname">${it.input}${it.sub ? `<span class="fsub">${it.sub}</span>` : ""}<span class="fprice">${it.unitLabel}・税込 ${yen(it.gross)}円</span></span>
       <span class="stepper">
         <button type="button" id="minus-${it.id}" data-id="${it.id}" data-d="-1" aria-label="${it.input}を1減らす">−</button>
         <output id="q-${it.id}" aria-label="${it.input}の${it.unitLabel}"></output>
@@ -210,7 +212,7 @@ function start(saved) {
   function render() {
     $("rows").innerHTML = ITEMS.map(it => {
       const q = qty[it.id];
-      return `<tr class="${q ? "" : "zero"}"><td>${it.slip}</td><td class="unit">${yen(it.gross)}</td><td class="qty">${q}</td><td class="amt">${yen(q * it.gross)}</td></tr>`;
+      return `<tr class="${q ? "" : "zero"}"><td>${it.slip}${it.sub ? `<span class="ssub">${it.sub}</span>` : ""}</td><td class="unit">${yen(it.gross)}</td><td class="qty">${q}</td><td class="amt">${yen(q * it.gross)}</td></tr>`;
     }).join("");
     for (const it of ITEMS) {
       $("q-" + it.id).textContent = qty[it.id];

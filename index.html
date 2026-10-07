@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>コース料金計算</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+html{padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}
+/* レイアウト: 左に注文入力(スタッフ操作)、右にお会計伝票(お客様に見せる面)。確認表示では伝票だけを中央に大きく出す。 */
+:root {
+  --bg: #eef2ef;
+  --paper: #fbfcfa;
+  --ink: #18231f;
+  --muted: #5d6b65;
+  --line: #cfd8d2;
+  --accent: #0f6e56;
+  --accent-ink: #ffffff;
+  --press: #dfe8e2;
+  --font-display: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --font-body: "Zen Kaku Gothic New", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Noto Sans JP", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111815; --paper: #1a2420; --ink: #e9f0ec; --muted: #9cada5;
+    --line: #33423b; --accent: #3fb894; --accent-ink: #08130f; --press: #26332d;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111815; --paper: #1a2420; --ink: #e9f0ec; --muted: #9cada5;
+  --line: #33423b; --accent: #3fb894; --accent-ink: #08130f; --press: #26332d;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 17px; line-height: 1.5;
+  padding-inline: 20px; padding-block: 20px 28px;
+  -webkit-text-size-adjust: 100%;
+}
+button { font: inherit; color: inherit; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+.wrap { max-width: 1120px; margin-inline: auto; display: flex; flex-direction: column; gap: 18px; }
+.top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+h1 { font-family: var(--font-display); font-size: 26px; font-weight: 700; margin: 0; letter-spacing: .04em; }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.btn {
+  min-height: 48px; padding: 0 20px; border-radius: 8px;
+  border: 1.5px solid var(--line); background: var(--paper); font-weight: 700;
+}
+.btn:active { background: var(--press); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primary:active { opacity: .85; }
+
+.cols { display: grid; grid-template-columns: 1fr; gap: 18px; align-items: start; }
+@media (min-width: 860px) { .cols { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); } }
+.cols > * { min-width: 0; }
+
+h2 { font-size: 15px; font-weight: 700; color: var(--muted); margin: 0 0 10px; letter-spacing: .08em; }
+
+/* 入力 */
+.inputs { display: flex; flex-direction: column; }
+.field {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 0; border-top: 1px solid var(--line);
+}
+.field:last-child { border-bottom: 1px solid var(--line); }
+.field.gap { margin-top: 18px; }
+.fname { font-weight: 700; font-size: 19px; }
+.fprice { display: block; color: var(--muted); font-size: 14px; font-weight: 400; font-variant-numeric: tabular-nums; }
+.stepper { display: flex; align-items: center; gap: 6px; flex: none; }
+.stepper button {
+  width: 56px; height: 56px; border-radius: 50%;
+  border: 1.5px solid var(--line); background: var(--paper);
+  font-size: 28px; line-height: 1; font-weight: 500;
+}
+.stepper button:active { background: var(--press); }
+.stepper button:disabled { opacity: .35; }
+.stepper output {
+  width: 56px; text-align: center; font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums;
+}
+
+/* 伝票 */
+.slip { background: var(--paper); border: 1px solid var(--line); border-radius: 4px; padding: 22px 22px 0; overflow: hidden; }
+.slip h2 { color: var(--ink); font-family: var(--font-display); font-size: 20px; letter-spacing: .3em; text-align: center; margin-bottom: 14px; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th { font-size: 13px; font-weight: 500; color: var(--muted); text-align: right; padding: 6px 0; border-bottom: 1.5px solid var(--ink); white-space: nowrap; }
+th:first-child { text-align: left; }
+td { padding: 11px 0; text-align: right; border-bottom: 1px dashed var(--line); white-space: nowrap; }
+td:first-child { text-align: left; white-space: normal; }
+td.qty, th.qty { width: 3.5em; }
+td.unit, th.unit { width: 6em; color: var(--muted); }
+td.amt, th.amt { width: 6.5em; font-weight: 700; }
+tr.zero td { color: var(--muted); opacity: .55; font-weight: 400; }
+.sums { padding: 12px 0 14px; display: flex; flex-direction: column; gap: 4px; font-variant-numeric: tabular-nums; }
+.sums div { display: flex; justify-content: space-between; color: var(--muted); font-size: 15px; }
+.total {
+  margin-inline: -22px; padding: 16px 22px; background: var(--accent); color: var(--accent-ink);
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+}
+.total .label { font-weight: 700; font-size: 18px; }
+.total .yen { font-size: 44px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.total .yen small { font-size: .5em; margin-left: 2px; }
+.note { color: var(--muted); font-size: 14px; margin: 10px 2px 0; }
+.empty { text-align: center; color: var(--muted); padding: 22px 0; border-bottom: 1px dashed var(--line); }
+
+/* お客様確認表示: 入力を隠し、伝票を大きく */
+.confirm .inputs-panel, .confirm #resetBtn { display: none; }
+.confirm .cols { grid-template-columns: 1fr; }
+.confirm .slip-panel { max-width: 720px; width: 100%; margin-inline: auto; font-size: 21px; }
+.confirm tr.zero { display: none; }
+.confirm th { font-size: 15px; }
+.confirm .sums div { font-size: 18px; }
+.confirm .total .yen { font-size: 60px; }
+.confirm .total .label { font-size: 22px; }
+</style>
+
+</head>
+<body>
+<div class="wrap" id="app">
+  <div class="top">
+    <h1>コース料金計算</h1>
+    <div class="actions">
+      <button class="btn" id="resetBtn" type="button">リセット</button>
+      <button class="btn primary" id="modeBtn" type="button">お客様確認画面にする</button>
+    </div>
+  </div>
+
+  <div class="cols">
+    <section class="inputs-panel" aria-labelledby="h-in">
+      <h2 id="h-in">① ご注文入力</h2>
+      <div class="inputs" id="inputs"></div>
+    </section>
+
+    <section class="slip-panel" aria-labelledby="h-slip">
+      <div class="slip">
+        <h2 id="h-slip">お会計明細</h2>
+        <table>
+          <thead><tr><th>項目</th><th class="unit">単価（税込）</th><th class="qty">数量</th><th class="amt">金額（税込）</th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+        <div class="empty" id="empty" hidden>ご注文が入力されていません</div>
+        <div class="sums">
+          <div><span>小計（税抜）</span><span id="sub"></span></div>
+          <div><span>消費税（10%）</span><span id="tax"></span></div>
+        </div>
+        <div class="total" aria-live="polite">
+          <span class="label">合計（税込）</span>
+          <span class="yen"><span id="total"></span><small>円</small></span>
+        </div>
+      </div>
+      <p class="note">※単品のご注文は含みません。</p>
+    </section>
+  </div>
+</div>
+
+<script>
+/* ===== 単価設定（価格を変えるときはここだけ直す） =====
+   net = 税抜単価、gross = 税込単価。元のExcel「コース価格設定」「売上予測」と同じ値。 */
+const ITEMS = [
+  { id: "adult", input: "大人",       unitLabel: "人数",   slip: "チャージ料金（大人）",     net: 1000,  gross: 1100 },
+  { id: "child", input: "こども",     unitLabel: "人数",   slip: "チャージ料金（こども）",   net: 500,   gross: 550 },
+  { id: "matsu", input: "松コース",   unitLabel: "注文数", slip: "松コースセット（2名分）", net: 7000,  gross: 7700,  gap: true },
+  { id: "take",  input: "竹コース",   unitLabel: "注文数", slip: "竹コースセット（2名分）", net: 10000, gross: 11000 },
+  { id: "ume",   input: "梅コース",   unitLabel: "注文数", slip: "梅コースセット（2名分）", net: 15000, gross: 16500 },
+];
+const MAX = 99;
+const yen = n => n.toLocaleString("ja-JP");
+
+function calc(qty) {
+  let total = 0, sub = 0;
+  for (const it of ITEMS) { const q = qty[it.id] || 0; total += q * it.gross; sub += q * it.net; }
+  return { total, sub, tax: total - sub };
+}
+
+function start(saved) {
+  const qty = Object.assign(Object.fromEntries(ITEMS.map(i => [i.id, 0])), saved.qty || {});
+  let confirmMode = !!saved.confirmMode;
+  const $ = id => document.getElementById(id);
+  const app = $("app");
+
+  $("inputs").innerHTML = ITEMS.map(it => `
+    <div class="field${it.gap ? " gap" : ""}">
+      <span class="fname">${it.input}<span class="fprice">${it.unitLabel}・税込 ${yen(it.gross)}円</span></span>
+      <span class="stepper">
+        <button type="button" id="minus-${it.id}" data-id="${it.id}" data-d="-1" aria-label="${it.input}を1減らす">−</button>
+        <output id="q-${it.id}" aria-label="${it.input}の${it.unitLabel}"></output>
+        <button type="button" id="plus-${it.id}" data-id="${it.id}" data-d="1" aria-label="${it.input}を1増やす">＋</button>
+      </span>
+    </div>`).join("");
+
+  function render() {
+    $("rows").innerHTML = ITEMS.map(it => {
+      const q = qty[it.id];
+      return `<tr class="${q ? "" : "zero"}"><td>${it.slip}</td><td class="unit">${yen(it.gross)}</td><td class="qty">${q}</td><td class="amt">${yen(q * it.gross)}</td></tr>`;
+    }).join("");
+    for (const it of ITEMS) {
+      $("q-" + it.id).textContent = qty[it.id];
+      $("minus-" + it.id).disabled = qty[it.id] <= 0;
+      $("plus-" + it.id).disabled = qty[it.id] >= MAX;
+    }
+    const r = calc(qty);
+    $("sub").textContent = yen(r.sub) + "円";
+    $("tax").textContent = yen(r.tax) + "円";
+    $("total").textContent = yen(r.total);
+    app.classList.toggle("confirm", confirmMode);
+    $("empty").hidden = !(confirmMode && r.total === 0);
+    $("modeBtn").textContent = confirmMode ? "入力に戻る" : "お客様確認画面にする";
+    $("modeBtn").classList.toggle("primary", !confirmMode);
+  }
+
+  $("inputs").addEventListener("click", e => {
+    const b = e.target.closest("button[data-id]");
+    if (!b) return;
+    const id = b.dataset.id;
+    qty[id] = Math.min(MAX, Math.max(0, qty[id] + Number(b.dataset.d)));
+    render();
+  });
+  $("resetBtn").addEventListener("click", () => { for (const it of ITEMS) qty[it.id] = 0; render(); });
+  $("modeBtn").addEventListener("click", () => { confirmMode = !confirmMode; render(); window.scrollTo(0, 0); });
+
+  window.claude?.hot?.snapshot?.(() => ({ qty, confirmMode }));
+  render();
+}
+window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+</script>
+</body>
+</html>
